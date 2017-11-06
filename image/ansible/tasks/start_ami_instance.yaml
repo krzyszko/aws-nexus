@@ -1,0 +1,23 @@
+- name: "Launching instance"
+  ec2:
+    instance_type: t2.medium
+    image: "{{ source_image_name }}"
+    wait: yes
+    region: "{{ aws_region }}"        
+    count: 1
+    assign_public_ip: yes
+    vpc_subnet_id: "{{ vpc_subnet_id}}"
+    key_name: "{{ key.name }}"
+  register: ec2_to_image
+- name: "Retrieving public dns as a name"
+  set_fact:
+    ec2_template_name: "{{ ec2_to_image.instances[0].public_dns_name }}"
+- name: "Register instance id"
+  set_fact:
+    ec2_id: "{{ ec2_to_image.instances[0].id }}"
+- name: "Adding newly created machine to the inventory"
+  add_host:
+    name: "{{ ec2_template_name }}"
+    groups: image
+    ansible_ssh_private_key_file: "{{ key.local_file }}"
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"

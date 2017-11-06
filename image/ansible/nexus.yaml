@@ -1,0 +1,25 @@
+---
+- name: "Nexus machine preparation"
+  hosts: localhost
+  tasks:
+    - include_tasks: "./tasks/start_ami_instance.yaml"
+- name: "Nexus provisioners"
+  gather_facts: no
+  hosts: image
+  user: ec2-user
+  tasks:
+    - include_tasks: "./tasks/provision_nexus.yaml"
+- name: "Nexus image creation"
+  hosts: localhost
+  tasks:
+    - include_tasks: "./tasks/create_ami.yaml"
+
+
+
+
+
+
+
+
+
+

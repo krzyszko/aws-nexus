@@ -1,0 +1,22 @@
+---
+- name: "Stopping instance"
+  ec2:
+    state: stopped
+    instance_ids: "{{ ec2_id }}"
+    region: "{{ aws_region }}"
+    wait: yes
+- name: "Creating ami"
+  ec2_ami:
+    instance_id: "{{ ec2_id }}"
+    name: "{{ destination_image_name }}"
+    region: "{{ aws_region }}"
+    wait: yes
+  register: ami
+- debug:
+    msg: "Created ami image: {{ ami.image_id }}"
+- name: "Terminating instance"
+  ec2:
+    state: absent
+    instance_ids: "{{ ec2_id }}"
+    region: "{{ aws_region }}"
+    wait: yes

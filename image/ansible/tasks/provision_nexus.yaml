@@ -1,0 +1,40 @@
+- name: "Waiting for ssh to be ready"
+  wait_for_connection:
+    timeout: 600
+- block:
+  - name: "Waiting a while for instance to be fully initialized"
+    pause:
+      minutes: 1
+  - name: "Creating nexus user"
+    user:
+      name: nexus
+      home: "/opt/nexus"
+  - name: "Installing java"
+    yum:
+      name: java
+      state: latest
+  become: true
+  become_user: root
+- block:
+  - name: "Downloading nexus"
+    unarchive:
+      src: "{{ nexus_download_url }}"
+      dest: /opt/nexus
+      remote_src: yes
+  - name: "Changing nexus directory name"
+    shell: mv nexus-* nexus
+    args:
+      chdir: /opt/nexus
+  become: true
+  become_user: nexus
+- block:
+  - name: "Copying unit file"
+    copy:
+      src: ../files/nexus.service
+      dest: /usr/lib/systemd/system/
+  - name: "Enabling nexus service"
+    systemd:
+      enabled: yes
+      name: nexus
+  become: true
+  become_user: root
