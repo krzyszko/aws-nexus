@@ -1,0 +1,195 @@
+{
+   "Parameters" : {
+     "KeyName": {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "AllowedPattern" : "[\\x20-\\x7E]*",
+      "ConstraintDescription" : "can contain only ASCII characters."
+    },
+    "Image": {
+    "Description" : "Name of an existing EC2 image",
+    "Type": "String",
+    "MinLength": "1",
+    "MaxLength": "20",
+    "AllowedPattern" : "[\\x20-\\x7E]*",
+    "ConstraintDescription" : "can contain only ASCII characters."
+    },
+    "NexusImage": {
+      "Description" : "Name of an existing Nexus EC2 image",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "20",
+      "AllowedPattern" : "[\\x20-\\x7E]*",
+      "ConstraintDescription" : "can contain only ASCII characters."
+      }
+    },
+  "Mappings" : {
+  },
+
+  "Resources": {
+    "NexusVPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.1.0.0/16",
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "NexusVpc"
+          }
+        ]
+      }
+    },
+    "InternetGateway" : {
+       "Type" : "AWS::EC2::InternetGateway"
+    },
+    "PublicInternetRoute" : {
+      "Type" : "AWS::EC2::Route",
+      "DependsOn" : [ "InternetGateway", "PublicInternetRouteTable" ] ,
+      "Properties" : {
+        "DestinationCidrBlock" : "0.0.0.0/0",
+        "GatewayId" : { "Ref" : "InternetGateway" },
+        "RouteTableId" : { "Ref" : "PublicInternetRouteTable" }
+      }
+    },
+    "VPCGatewayAttachment" : {
+       "Type" : "AWS::EC2::VPCGatewayAttachment",
+       "Properties" : {
+          "InternetGatewayId" : { "Ref" : "InternetGateway" },
+          "VpcId" : { "Ref" : "NexusVPC" }
+       }
+    },
+    "PublicInternetRouteTable" : {
+       "Type" : "AWS::EC2::RouteTable",
+       "Properties" : {
+          "VpcId" : { "Ref" : "NexusVPC" }
+       }
+    },
+    "PublicSubnet" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "AvailabilityZone" : { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+        "CidrBlock" : "10.1.1.0/24",
+        "VpcId" : { "Ref" : "NexusVPC" }
+      }
+    },
+    "PublicSubnet1RouteTableAssociation" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "RouteTableId" : { "Ref" : "PublicInternetRouteTable" },
+        "SubnetId" : { "Ref" : "PublicSubnet" }
+      }
+    },
+    "NexusSubnet1" : {
+    "Type" : "AWS::EC2::Subnet",
+    "Properties" : {
+      "AvailabilityZone" : { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+      "CidrBlock" : "10.1.20.0/24",
+      "VpcId" : { "Ref" : "NexusVPC" }
+      }
+    },
+    "NexusSubnet2" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "AvailabilityZone" : { "Fn::Select" : [ "2", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+        "CidrBlock" : "10.1.21.0/24",
+        "VpcId" : { "Ref" : "NexusVPC" }
+      }
+    },
+    "InstanceSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "VpcId" : { "Ref" : "NexusVPC" },
+        "GroupDescription" : "Enable SSH access via port 22",
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "80", "CidrIp" : "0.0.0.0/0"}
+         ]
+      }
+    },
+    "NexusSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "VpcId" : { "Ref" : "NexusVPC" },
+        "GroupDescription" : "Enable SSH access via port 22",
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.1.0.0/16" },
+          { "IpProtocol" : "tcp", "FromPort" : "8081", "ToPort" : "8081", "CidrIp" : "10.1.0.0/16" }
+         ]
+      }
+    },
+    "MountTargetSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "VpcId" : { "Ref" : "NexusVPC" },
+        "GroupDescription" : "Enable SSH access via port 22",
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp", "FromPort" : "2049", "ToPort" : "2049", "CidrIp" : "10.1.0.0/16" }
+         ]
+      }
+    },
+    "BastionInstance" : {
+         "Type" : "AWS::EC2::Instance",
+         "Properties" : {
+            "ImageId" : { "Ref" : "NexusImage" },
+            "KeyName" : { "Ref" : "KeyName" },
+            "SecurityGroupIds" : [{ "Ref" : "InstanceSecurityGroup" }],
+            "SubnetId" : { "Ref" : "PublicSubnet" },
+            "InstanceType" : "t2.medium"
+         }
+    },
+    "IPAddress" : {
+      "Type" : "AWS::EC2::EIP",
+      "DependsOn" : "VPCGatewayAttachment",
+      "Properties" : {
+        "Domain" : "vpc",
+        "InstanceId" : { "Ref" : "BastionInstance" }
+      }
+    },
+    "NexusLaunchConfig" : {
+    "Type" : "AWS::AutoScaling::LaunchConfiguration",
+    "Properties" : {
+      "KeyName" : { "Ref" : "KeyName" },
+      "ImageId" : { "Ref" : "NexusImage"},
+        "SecurityGroups" : [ { "Ref" : "NexusSecurityGroup" } ],
+        "InstanceType" : "t2.medium"
+      }
+    },
+    "NexusFileSystem": {
+    "Type" : "AWS::EFS::FileSystem",
+      "Properties" : {
+        "Encrypted" : false,
+        "FileSystemTags" : []
+      }
+    },
+    "NexusMountTarget1": {
+    "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": { "Ref": "NexusFileSystem" },
+        "SubnetId": { "Ref": "NexusSubnet1" },
+        "SecurityGroups": [ { "Ref": "MountTargetSecurityGroup" } ]
+      }
+    },
+    "NexusMountTarget2": {
+    "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": { "Ref": "NexusFileSystem" },
+        "SubnetId": { "Ref": "NexusSubnet2" },
+        "SecurityGroups": [ { "Ref": "MountTargetSecurityGroup" } ]
+      }
+    },
+    "NexusBastionMountTarget": {
+    "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": { "Ref": "NexusFileSystem" },
+        "SubnetId": { "Ref": "PublicSubnet" },
+        "SecurityGroups": [ { "Ref": "MountTargetSecurityGroup" } ]
+      }
+    }
+  },
+  "Outputs" : {
+  }
+}

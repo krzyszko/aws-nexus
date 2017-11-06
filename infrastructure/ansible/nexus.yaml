@@ -1,0 +1,15 @@
+---
+- name: "Creating aws infrastructure"
+  hosts: localhost
+  tasks:
+    - name: "Creating cloud formation stack"
+      cloudformation:
+        stack_name: "nexus-stack"
+        state: "present"
+        region: "{{ aws_region }}"
+        disable_rollback: true
+        template: "../files/nexus_template.json"
+        template_parameters:
+          KeyName: " {{ key.name }}"
+          Image: "{{ source_image_name }}"
+          NexusImage: "ami-5f7bca25"
