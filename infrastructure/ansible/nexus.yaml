@@ -12,4 +12,4 @@
         template_parameters:
           KeyName: " {{ key.name }}"
           Image: "{{ source_image_name }}"
-          NexusImage: "ami-5f7bca25"
+          NexusImage: "ami-62833018"

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+
+data=/opt/nexus/data
+nfsMountTarget=`curl http://169.254.169.254/latest/user-data | grep nfsDNS | cut -d: -f2`
+
+mkdir ${data}
+
+cat << _EOF >/opt/nexus/nexus/bin/nexus.vmoptions
+-Xms1200M
+-Xmx1200M
+-XX:MaxDirectMemorySize=2G
+-XX:+UnlockDiagnosticVMOptions
+-XX:+UnsyncloadClass
+-XX:+LogVMOutput
+-XX:LogFile=${data}/nexus3/log/jvm.log
+-XX:-OmitStackTraceInFastThrow
+-Djava.net.preferIPv4Stack=true
+-Dkaraf.home=.
+-Dkaraf.base=.
+-Dkaraf.etc=etc/karaf
+-Djava.util.logging.config.file=etc/karaf/java.util.logging.properties
+-Dkaraf.data=${data}/nexus3
+-Djava.io.tmpdir=${data}/nexus3/tmp
+-Dkaraf.startLocalConsole=false
+_EOF
+
+chown nexus:nexus /opt/nexus/nexus/bin/nexus.vmoptions
+
+mount -t nfs ${nfsMountTarget}:/ ${data}
+
+
+chown -R nexus:nexus ${data}

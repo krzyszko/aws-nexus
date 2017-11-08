@@ -13,6 +13,10 @@
     yum:
       name: java
       state: latest
+  - name: "Installing nfs"
+    yum:
+      name: nfs-utils
+      state: latest
   become: true
   become_user: root
 - block:
@@ -28,13 +32,17 @@
   become: true
   become_user: nexus
 - block:
-  - name: "Copying unit file"
-    copy:
-      src: ../files/nexus.service
-      dest: /usr/lib/systemd/system/
+  - name: "Copying rootfs"
+    synchronize:
+      src: ../files/rootfs/
+      dest: /
   - name: "Enabling nexus service"
     systemd:
       enabled: yes
       name: nexus
+  - name: "Enabling nexus-prop service"
+    systemd:
+      enabled: yes
+      name: nexus-prop
   become: true
   become_user: root
