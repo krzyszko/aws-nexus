@@ -1,35 +1,32 @@
 {
-   "Parameters" : {
-     "KeyName": {
+  "Parameters" : {
+    "KeyName": {
       "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
       "Type": "String",
       "MinLength": "1",
       "MaxLength": "255",
-      "AllowedPattern" : "[\\x20-\\x7E]*",
-      "ConstraintDescription" : "can contain only ASCII characters."
+      "AllowedPattern" : "^[a-zA-Z0-9\\-]*$"
     },
     "Image": {
-    "Description" : "Name of an existing EC2 image",
-    "Type": "String",
-    "MinLength": "1",
-    "MaxLength": "20",
-    "AllowedPattern" : "[\\x20-\\x7E]*",
-    "ConstraintDescription" : "can contain only ASCII characters."
+      "Description" : "Name of an existing EC2 image",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "20",
+      "AllowedPattern" : "^[a-zA-Z0-9\\-]*$"
     },
     "NexusImage": {
       "Description" : "Name of an existing Nexus EC2 image",
       "Type": "String",
       "MinLength": "1",
       "MaxLength": "20",
-      "AllowedPattern" : "[\\x20-\\x7E]*",
-      "ConstraintDescription" : "can contain only ASCII characters."
-      }
-    },
+      "AllowedPattern" : "^[a-zA-Z0-9\\-]*$"
+    }
+  },
   "Mappings" : {
   },
 
   "Resources": {
-    "NexusVPC": {
+    "NexusVpc": {
       "Type": "AWS::EC2::VPC",
       "Properties": {
         "CidrBlock": "172.35.0.0/16",
@@ -63,14 +60,14 @@
         }
       }
     },
-    "VPCGatewayAttachment": {
+    "VpcGatewayAttachment": {
       "Type": "AWS::EC2::VPCGatewayAttachment",
       "Properties": {
         "InternetGatewayId": {
           "Ref": "InternetGateway"
         },
         "VpcId": {
-          "Ref": "NexusVPC"
+          "Ref": "NexusVpc"
         }
       }
     },
@@ -78,27 +75,39 @@
       "Type": "AWS::EC2::RouteTable",
       "Properties": {
         "VpcId": {
-          "Ref": "NexusVPC"
-        }
+          "Ref": "NexusVpc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "DefaultInternetRouteTable"
+          }
+        ]
       }
     },
-    "NATInternetRouteTable": {
+    "NatInternetRouteTable": {
       "Type": "AWS::EC2::RouteTable",
       "Properties": {
         "VpcId": {
-          "Ref": "NexusVPC"
-        }
+          "Ref": "NexusVpc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "NatInternetRouteTable"
+          }
+        ]
       }
     },
-    "NATInternetRoute": {
+    "NatInternetRoute": {
       "Type": "AWS::EC2::Route",
       "Properties": {
         "DestinationCidrBlock": "0.0.0.0/0",
         "NatGatewayId": {
-          "Ref": "NATGateway"
+          "Ref": "NatGateway"
         },
         "RouteTableId": {
-          "Ref": "NATInternetRouteTable"
+          "Ref": "NatInternetRouteTable"
         }
       }
     },
@@ -117,25 +126,31 @@
         },
         "CidrBlock": "172.35.0.0/24",
         "VpcId": {
-          "Ref": "NexusVPC"
-        }
+          "Ref": "NexusVpc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "PublicSubnet"
+          }
+        ]
       }
     },
-    "NexusSubnet1RouteTableAssociation" : {
+    "NexusSubnet1routetableassociation" : {
        "Type" : "AWS::EC2::SubnetRouteTableAssociation",
        "Properties" : {
           "SubnetId" : { "Ref" : "NexusSubnet1" },
-          "RouteTableId" : { "Ref" : "NATInternetRouteTable" }
+          "RouteTableId" : { "Ref" : "NatInternetRouteTable" }
        }
     },
-    "NexusSubnet2RouteTableAssociation" : {
+    "NexusSubnet2routetableassociation" : {
     "Type" : "AWS::EC2::SubnetRouteTableAssociation",
     "Properties": {
     "SubnetId": {"Ref" : "NexusSubnet2"},
-    "RouteTableId": {"Ref": "NATInternetRouteTable"}
+    "RouteTableId": {"Ref": "NatInternetRouteTable"}
     }
     },
-    "PublicSubnet1RouteTableAssociation": {
+    "PublicSubnetroutetableassociation": {
       "Type": "AWS::EC2::SubnetRouteTableAssociation",
       "Properties": {
         "RouteTableId": {
@@ -183,8 +198,13 @@
         },
         "CidrBlock": "172.35.1.0/24",
         "VpcId": {
-          "Ref": "NexusVPC"
-        }
+          "Ref": "NexusVpc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Nexus private subnet"
+          } ]
       }
     },
     "NexusSubnet2": {
@@ -202,8 +222,14 @@
         },
         "CidrBlock": "172.35.2.0/24",
         "VpcId": {
-          "Ref": "NexusVPC"
-        }
+          "Ref": "NexusVpc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Nexus private subnet"
+          } ]
+
       }
     },
     "NexusPublicSubnet1": {
@@ -221,7 +247,7 @@
         },
         "CidrBlock": "172.35.101.0/27",
         "VpcId": {
-          "Ref": "NexusVPC"
+          "Ref": "NexusVpc"
         }
       }
     },
@@ -240,15 +266,21 @@
         },
         "CidrBlock": "172.35.102.0/27",
         "VpcId": {
-          "Ref": "NexusVPC"
-        }
+          "Ref": "NexusVpc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Nexus public subnet"
+          } ]
+
       }
     },
     "ElasticLoadBalancer": {
       "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
       "DependsOn": [ "InternetGateway" ],
       "Properties": {
-        "SecurityGroups": [ { "Ref": "LBSecurityGroup" } ],
+        "SecurityGroups": [ { "Ref": "LoadBalancerSecurityGroup" } ],
         "Subnets": [ { "Ref": "NexusPublicSubnet1" }, { "Ref": "NexusPublicSubnet2" } ],
           "Listeners": [
           {
@@ -272,7 +304,12 @@
           "UnhealthyThreshold": "5",
           "Interval": "5",
           "Timeout": "4"
-        }
+        },
+      "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Internet Facing load balancer subnet"
+          } ]
       }
     },
     "NexusGroup": {
@@ -314,16 +351,23 @@
           {
             "Ref": "ElasticLoadBalancer"
           }
-        ]
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Nexus scaling group",
+            "PropagateAtLaunch": false
+          } ]
+
       }
     },
-   "InstanceSecurityGroup": {
+   "BastionSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "VpcId": {
-          "Ref": "NexusVPC"
+          "Ref": "NexusVpc"
         },
-        "GroupDescription": "Enable SSH access via port 22",
+        "GroupDescription": "Ssh access to bastion node.",
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
@@ -331,16 +375,21 @@
             "ToPort": "22",
             "CidrIp": "0.0.0.0/0"
           }
-        ]
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Bastion security group"
+          } ]
       }
     },
     "NexusSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "VpcId": {
-          "Ref": "NexusVPC"
+          "Ref": "NexusVpc"
         },
-        "GroupDescription": "Enable SSH and Web access",
+        "GroupDescription": "Ssh access to nexus node.",
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
@@ -354,16 +403,21 @@
             "ToPort": "8081",
             "CidrIp": "172.35.0.0/16"
           }
-        ]
+        ],
+       "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Nexus security group"
+          } ]
       }
     },
-    "LBSecurityGroup": {
+    "LoadBalancerSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "VpcId": {
-          "Ref": "NexusVPC"
+          "Ref": "NexusVpc"
         },
-        "GroupDescription": "Enable LB http access to all.",
+        "GroupDescription": "Http access to load balancer.",
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
@@ -378,9 +432,9 @@
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "VpcId": {
-          "Ref": "NexusVPC"
+          "Ref": "NexusVpc"
         },
-        "GroupDescription": "Enable SSH access via port 22",
+        "GroupDescription": "NFS access to a mount target.",
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
@@ -388,7 +442,12 @@
             "ToPort": "2049",
             "CidrIp": "172.35.0.0/16"
           }
-        ]
+        ],
+       "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Nexus mount target security group"
+          } ]
       }
     },
     "BastionInstance": {
@@ -402,13 +461,13 @@
         },
         "SecurityGroupIds": [
           {
-            "Ref": "InstanceSecurityGroup"
+            "Ref": "BastionSecurityGroup"
           }
         ],
         "SubnetId": {
           "Ref": "PublicSubnet"
         },
-        "InstanceType": "t2.medium",
+        "InstanceType": "t2.micro",
         "UserData": {
           "Fn::Base64": {
             "Fn::Sub": "nfsDNS : ${NexusFileSystem}.efs.${AWS::Region}.amazonaws.com"
@@ -416,9 +475,9 @@
         }
       }
     },
-    "IPAddress": {
+    "IpAddress": {
       "Type": "AWS::EC2::EIP",
-      "DependsOn": "VPCGatewayAttachment",
+      "DependsOn": "VpcGatewayAttachment",
       "Properties": {
         "Domain": "vpc",
         "InstanceId": {
@@ -426,9 +485,9 @@
         }
       }
     },
-    "NATIPAddress": {
+    "NatIpAddress": {
       "Type": "AWS::EC2::EIP",
-      "DependsOn": "VPCGatewayAttachment",
+      "DependsOn": "VpcGatewayAttachment",
       "Properties": {
         "Domain": "vpc"
       }
@@ -453,55 +512,60 @@
             "Fn::Sub": "nfsDNS : ${NexusFileSystem}.efs.${AWS::Region}.amazonaws.com"
           }
         }
-      }},
-      "NexusFileSystem": {
+      }
+    },
+    "NexusFileSystem": {
         "Type": "AWS::EFS::FileSystem",
         "Properties": {
           "Encrypted": false,
           "FileSystemTags": []
         }
       },
-      "NexusMountTarget1": {
-        "Type": "AWS::EFS::MountTarget",
-        "Properties": {
-          "FileSystemId": {
-            "Ref": "NexusFileSystem"
-          },
-          "SubnetId": {
-            "Ref": "NexusSubnet1"
-          },
-          "SecurityGroups": [
-            {
-              "Ref": "MountTargetSecurityGroup"
-            }
-          ]
-        }
-      },
-      "NexusMountTarget2": {
-        "Type": "AWS::EFS::MountTarget",
-        "Properties": {
-          "FileSystemId": {
-            "Ref": "NexusFileSystem"
-          },
-          "SubnetId": {
-            "Ref": "NexusSubnet2"
-          },
-          "SecurityGroups": [
-            {
-              "Ref": "MountTargetSecurityGroup"
-            }
-          ]
-        }
-     },
-    "NATGateway" : {
-      "DependsOn" : "VPCGatewayAttachment",
+    "NexusMountTarget1": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "NexusFileSystem"
+        },
+        "SubnetId": {
+          "Ref": "NexusSubnet1"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "MountTargetSecurityGroup"
+          }
+        ]
+      }
+    },
+    "NexusMountTarget2": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "NexusFileSystem"
+        },
+        "SubnetId": {
+          "Ref": "NexusSubnet2"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "MountTargetSecurityGroup"
+          }
+        ]
+      }
+    },
+    "NatGateway" : {
+      "DependsOn" : "VpcGatewayAttachment",
       "Type" : "AWS::EC2::NatGateway",
       "Properties" : {
-        "AllocationId" : { "Fn::GetAtt" : ["NATIPAddress", "AllocationId"]},
+        "AllocationId" : { "Fn::GetAtt" : ["NatIpAddress", "AllocationId"]},
         "SubnetId" : { "Ref" : "PublicSubnet" }
       }
     }
   },
   "Outputs" : {
+    "LoadBalancerDNS": {
+      "Description": "LoadBalancerDNSName",
+      "Value": { "Fn::GetAtt" : [ "ElasticLoadBalancer" , "DNSName" ] }
+    }
   }
 }

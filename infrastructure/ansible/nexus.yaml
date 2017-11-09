@@ -10,6 +10,9 @@
         disable_rollback: true
         template: "../files/nexus_template.json"
         template_parameters:
-          KeyName: " {{ key.name }}"
+          KeyName: "{{ key.name }}"
           Image: "{{ source_image_name }}"
-          NexusImage: "ami-62833018"
+          NexusImage: "ami-9c43ffe6"
+      register: nexus_stack
+    - debug:
+        msg: "{{ nexus_stack.stack_outputs }}"

@@ -1,0 +1,14 @@
+Nexus deployment in AWS.
+Project aims to fully automate process of build fault tolerant Nexus deployment in AWS.  
+
+
+INSTRUCTION
+Building the image process requires at least one public subnet and a key pair already downloaded.
+#Cofiguration
+inventory/group_vars/all.yaml
+#build image
+cd image/ansible
+ansible-playbook -i ../inventory nexus.yaml
+#deploy infrastructure
+cd infrastructure/ansible
+ansible-playbook -i ../inventory nexus.yaml

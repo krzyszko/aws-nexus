@@ -3,7 +3,7 @@ nexus_download_url: http://download.sonatype.com/nexus/3/nexus-3.6.0-02-unix.tar
 source_image_name: ami-c998b6b2
 destination_image_name: nexus-latest-image
 aws_region: us-east-1
-vpc_subnet_id: subnet-9a1eeac7
+vpc_subnet_id: subnet-a1e774c5
 key:
   name: krzyszko
-  local_file: ~/Downloads/krzyszko_nexus.pem
+  local_file: ~/Downloads/krzyszko.pem
